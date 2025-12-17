@@ -170,13 +170,7 @@ export const useAppStore = create<AppStoreState>()(
     (set, get) => ({
       ...getInitialState(),
       version: CURRENT_APP_STORE_VERSION,
-      migrate: (persistedState: any, version: number) => {
-        if (version < 4) {
-          persistedState.currentWallpaper = "/wallpapers/pantheon.jpg";
-          persistedState.wallpaperSource = "/wallpapers/pantheon.jpg";
-        }
-        return persistedState;
-      },
+
 
       // Misc toggles / settings
       debugMode: false,
@@ -941,13 +935,7 @@ export const useAppStore = create<AppStoreState>()(
     {
       name: "ryos:app-store",
       version: CURRENT_APP_STORE_VERSION,
-      migrate: (persistedState: any, version: number) => {
-        if (version < 4) {
-          persistedState.currentWallpaper = "/wallpapers/pantheon.jpg";
-          persistedState.wallpaperSource = "/wallpapers/pantheon.jpg";
-        }
-        return persistedState;
-      },
+
       partialize: (state): Partial<AppStoreState> => ({
         windowOrder: state.windowOrder,
         apps: state.apps,
@@ -1007,6 +995,12 @@ export const useAppStore = create<AppStoreState>()(
         nextInstanceId: state.nextInstanceId,
       }),
       migrate: (persisted: unknown, version: number) => {
+        // Force wallpaper update for version 4
+        if (version < 4) {
+          (persisted as any).currentWallpaper = "/wallpapers/pantheon.jpg";
+          (persisted as any).wallpaperSource = "/wallpapers/pantheon.jpg";
+        }
+
         const prev = persisted as AppStoreState & {
           instanceStackOrder?: string[];
           instanceWindowOrder?: string[];
