@@ -52,7 +52,7 @@ export default defineConfig({
     tailwindcss(),
     // Only include Vercel and PWA plugins when not building for Tauri
     ...(process.env.TAURI_ENV ? [] : [
-      vercel(),
+      // vercel(), // Disabled for static deployment
       VitePWA({
       registerType: "autoUpdate",
       manifestFilename: "manifest.json",
@@ -283,9 +283,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  vercel: {
-    defaultSupportsResponseStreaming: true,
-  },
+  // vercel: {
+  //   defaultSupportsResponseStreaming: true,
+  // },
   build: {
     rollupOptions: {
       output: {
