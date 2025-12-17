@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
-// import vercel from "vite-plugin-vercel";
+
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,7 +52,7 @@ export default defineConfig({
     tailwindcss(),
     // Only include Vercel and PWA plugins when not building for Tauri
     ...(process.env.TAURI_ENV ? [] : [
-      // vercel(), // Disabled for static deployment
+      
       VitePWA({
       registerType: "autoUpdate",
       manifestFilename: "manifest.json",
@@ -283,9 +283,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // vercel: {
-  //   defaultSupportsResponseStreaming: true,
-  // },
+  
   build: {
     rollupOptions: {
       output: {
