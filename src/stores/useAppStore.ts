@@ -241,8 +241,8 @@ export const useAppStore = create<AppStoreState>()(
           },
         })),
 
-      currentWallpaper: "/wallpapers/photos/aqua/water.jpg",
-      wallpaperSource: "/wallpapers/photos/aqua/water.jpg",
+      currentWallpaper: "/wallpapers/pantheon.jpg",
+      wallpaperSource: "/wallpapers/pantheon.jpg",
       setCurrentWallpaper: (p) =>
         set({ currentWallpaper: p, wallpaperSource: p }),
 
