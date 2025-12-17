@@ -2,15 +2,6 @@
   "devCommand": "bun run dev",
   "headers": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://os.ryo.lu http://localhost:3000"
-        }
-      ]
-    },
-    {
       "source": "/fonts/:path*",
       "headers": [
         {

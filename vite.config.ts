@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
-import vercel from "vite-plugin-vercel";
+// import vercel from "vite-plugin-vercel";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
