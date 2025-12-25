@@ -4,12 +4,12 @@ import { useAppStoreShallow } from "@/stores/helpers";
 import { getAppIconPath } from "@/config/appRegistry";
 import { getTranslatedAppName } from "@/utils/i18n";
 import { ThemedIcon } from "@/components/shared/ThemedIcon";
-import { useFilesStore } from "@/stores/useFilesStore";
+
 import { useThemeStore } from "@/stores/useThemeStore";
 import { useSound, Sounds } from "@/hooks/useSound";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import type { AppInstance } from "@/stores/useAppStore";
-import type { AppletViewerInitialData } from "@/apps/applet-viewer";
+
+
 import {
   calculateExposeGrid,
   getExposeCellCenter,
@@ -34,7 +34,6 @@ export function ExposeView({ isOpen, onClose }: ExposeViewProps) {
     restoreInstance: state.restoreInstance,
   }));
 
-  const files = useFilesStore((s) => s.items);
   const currentTheme = useThemeStore((state) => state.current);
   const isMacOSXTheme = currentTheme === "macosx";
   const isMobile = useIsMobile();
@@ -67,50 +66,6 @@ export function ExposeView({ isOpen, onClose }: ExposeViewProps) {
       prevIsOpenRef.current = isOpen;
     }
   }, [isOpen, playOpenSound, playCloseSound]);
-
-  // Helper to get applet info (icon and name) from instance
-  const getAppletInfo = useCallback(
-    (instance: AppInstance) => {
-      const initialData = instance.initialData as
-        | AppletViewerInitialData
-        | undefined;
-      const path = initialData?.path || "";
-      const file = files[path];
-
-      // Get filename from path for label
-      const getFileName = (filePath: string): string => {
-        const parts = filePath.split("/");
-        const fileName = parts[parts.length - 1];
-        return fileName.replace(/\.(html|app)$/i, "");
-      };
-
-      const label = path ? getFileName(path) : "Applet Store";
-
-      // Check if the file icon is an emoji (not a file path)
-      const fileIcon = file?.icon;
-      const isEmojiIcon =
-        fileIcon &&
-        !fileIcon.startsWith("/") &&
-        !fileIcon.startsWith("http") &&
-        fileIcon.length <= 10;
-
-      // If no path (applet store), use the applet viewer icon
-      // Otherwise, use file icon if emoji, or fallback to package emoji
-      let icon: string;
-      let isEmoji: boolean;
-      if (!path) {
-        // Applet store - use app icon
-        icon = getAppIconPath("applet-viewer");
-        isEmoji = false;
-      } else {
-        icon = isEmojiIcon ? fileIcon : "📦";
-        isEmoji = true;
-      }
-
-      return { icon, label, isEmoji };
-    },
-    [files]
-  );
 
   // Handle window selection (called from AppManager)
   const handleWindowSelect = useCallback(
@@ -206,16 +161,12 @@ export function ExposeView({ isOpen, onClose }: ExposeViewProps) {
             transition={{ duration: 0.3, delay: 0.1 }}
           >
             {openInstances.map((instance, index) => {
-              const isApplet = instance.appId === "applet-viewer";
-              const appletInfo = isApplet ? getAppletInfo(instance) : null;
-              const displayIcon =
-                appletInfo?.icon || getAppIconPath(instance.appId);
+              const displayIcon = getAppIconPath(instance.appId);
               const displayLabel =
-                appletInfo?.label ||
                 instance.title ||
                 instance.displayTitle ||
                 getTranslatedAppName(instance.appId);
-              const isEmoji = appletInfo?.isEmoji || false;
+              const isEmoji = false;
 
               const cellCenter = getExposeCellCenter(
                 index,

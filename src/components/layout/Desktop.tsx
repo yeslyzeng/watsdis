@@ -70,19 +70,8 @@ export function Desktop({
 
   // Define the default order for desktop shortcuts
   const defaultShortcutOrder: AppId[] = [
-    "ipod",
-    "chats",
-    "applet-viewer",
-    "internet-explorer",
     "textedit",
-    "photo-booth",
-    "videos",
     "paint",
-    "soundboard",
-    "minesweeper",
-    "synth",
-    "terminal",
-    "pc",
   ];
 
   // Get desktop shortcuts - subscribe to store changes
@@ -195,16 +184,6 @@ export function Desktop({
         } else if (targetFile.path.startsWith("/Images/")) {
           launchApp("paint", {
             initialData: { path: targetFile.path, content: contentToUse },
-          });
-        } else if (
-          targetFile.path.startsWith("/Applets/") &&
-          (targetFile.path.endsWith(".app") || targetFile.path.endsWith(".html"))
-        ) {
-          launchApp("applet-viewer", {
-            initialData: {
-              path: targetFile.path,
-              content: contentAsString ?? "",
-            },
           });
         }
       } catch (err) {
@@ -491,8 +470,7 @@ export function Desktop({
     .filter(
       (app) =>
         app.id !== "finder" &&
-        app.id !== "control-panels" &&
-        app.id !== "applet-viewer"
+        app.id !== "control-panels"
     )
     .sort((a, b) => {
       switch (sortType) {
@@ -505,13 +483,8 @@ export function Desktop({
       }
     });
 
-  // macOS X: Only show iPod and Applet Store icons by default (with Macintosh HD shown above)
-  const displayedApps =
-    currentTheme === "macosx"
-      ? sortedApps.filter(
-          (app) => app.id === "ipod" || app.id === "applet-viewer"
-        )
-      : sortedApps;
+  // macOS X: Show all apps (with Macintosh HD shown above)
+  const displayedApps = sortedApps;
 
   // Create default shortcuts based on theme
   // Note: Logic moved to useFilesStore.ts (ensureDefaultDesktopShortcuts)
@@ -793,11 +766,7 @@ export function Desktop({
               key={app.id}
               name={getTranslatedAppName(app.id as AppId)}
               isDirectory={false}
-              icon={
-                isXpTheme && app.id === "pc"
-                  ? `/icons/${currentTheme}/games.png`
-                  : getAppIconPath(app.id)
-              }
+              icon={getAppIconPath(app.id)}
               onClick={(e) => handleIconClick(app.id, e)}
               onDoubleClick={(e) => {
                 e.stopPropagation();

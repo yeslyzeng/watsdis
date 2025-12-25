@@ -16,12 +16,12 @@ import { useLaunchApp } from "@/hooks/useLaunchApp";
 import { useFinderStore } from "@/stores/useFinderStore";
 import { useFilesStore } from "@/stores/useFilesStore";
 import { useDockStore, PROTECTED_DOCK_ITEMS, type DockItem } from "@/stores/useDockStore";
-import { useChatsStore } from "@/stores/useChatsStore";
+
 import { useIsPhone } from "@/hooks/useIsPhone";
 import { useLongPress } from "@/hooks/useLongPress";
 import { useSound, Sounds } from "@/hooks/useSound";
 import type { AppInstance } from "@/stores/useAppStore";
-import type { AppletViewerInitialData } from "@/apps/applet-viewer";
+
 import { RightClickMenu, MenuItem } from "@/components/ui/right-click-menu";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
 import { requestCloseWindow } from "@/utils/windowUtils";
@@ -540,7 +540,7 @@ const Divider = forwardRef<HTMLDivElement, DividerProps>(
 );
 
 // Apps that support multi-window
-const MULTI_WINDOW_APPS: AppId[] = ["textedit", "finder", "applet-viewer"];
+const MULTI_WINDOW_APPS: AppId[] = ["textedit", "finder"];
 
 function MacDock() {
   const { t } = useTranslation();
@@ -559,16 +559,14 @@ function MacDock() {
   const { play: playZoomMinimize } = useSound(Sounds.WINDOW_ZOOM_MINIMIZE);
 
   const launchApp = useLaunchApp();
-  const files = useFilesStore((s) => s.items);
   const fileStore = useFilesStore();
   const trashIcon = useFilesStore(
     (s) => s.items["/Trash"]?.icon || "/icons/trash-empty.png"
   );
   const finderInstances = useFinderStore((s) => s.instances);
   
-  // Get current username for admin check
-  const username = useChatsStore((state) => state.username);
-  const isAdmin = username?.toLowerCase() === "ryo";
+  // Admin check removed - no admin-only apps
+  const isAdmin = false;
   
   // Dock store for customization
   const { 
@@ -877,50 +875,6 @@ function MacDock() {
     [allItems]
   );
   const isTrashEmpty = trashItems.length === 0;
-
-  // Helper to get applet info (icon and name) from instance
-  const getAppletInfo = useCallback(
-    (instance: AppInstance) => {
-      const initialData = instance.initialData as
-        | AppletViewerInitialData
-        | undefined;
-      const path = initialData?.path || "";
-      const file = files[path];
-
-      // Get filename from path for label
-      const getFileName = (path: string): string => {
-        const parts = path.split("/");
-        const fileName = parts[parts.length - 1];
-        return fileName.replace(/\.(html|app)$/i, "");
-      };
-
-      const label = path ? getFileName(path) : t("common.dock.appletStore");
-
-      // Check if the file icon is an emoji (not a file path)
-      const fileIcon = file?.icon;
-      const isEmojiIcon =
-        fileIcon &&
-        !fileIcon.startsWith("/") &&
-        !fileIcon.startsWith("http") &&
-        fileIcon.length <= 10;
-
-      // If no path (applet store), use the applet viewer icon
-      // Otherwise, use file icon if emoji, or fallback to package emoji
-      let icon: string;
-      let isEmoji: boolean;
-      if (!path) {
-        // Applet store - use app icon
-        icon = getAppIconPath("applet-viewer");
-        isEmoji = false;
-      } else {
-        icon = isEmojiIcon ? fileIcon : "📦";
-        isEmoji = true;
-      }
-
-      return { icon, label, isEmoji };
-    },
-    [files]
-  );
 
   // Pinned apps on the left side (from dock store)
   const pinnedLeft: AppId[] = useMemo(
@@ -1267,26 +1221,13 @@ function MacDock() {
         openByApp[i.appId].push(i);
       });
 
-    // For each app, either add individual applet instances or a single app entry
+    // For each app, add a single app entry
     Object.entries(openByApp).forEach(([appId, instancesList]) => {
-      if (appId === "applet-viewer") {
-        // Add each applet instance separately
-        instancesList.forEach((inst) => {
-          items.push({
-            type: "applet",
-            appId: inst.appId as AppId,
-            instanceId: inst.instanceId,
-            sortKey: inst.createdAt || 0,
-          });
-        });
-      } else {
-        // Add a single entry for this app
-        items.push({
-          type: "app",
-          appId: appId as AppId,
-          sortKey: instancesList[0]?.createdAt ?? 0,
-        });
-      }
+      items.push({
+        type: "app",
+        appId: appId as AppId,
+        sortKey: instancesList[0]?.createdAt ?? 0,
+      });
     });
 
     // Sort by creation time to keep a stable order
@@ -1484,65 +1425,7 @@ function MacDock() {
         return items;
       }
       
-      // For applet-viewer with a specific instance, only show that applet's menu
-      if (appId === "applet-viewer" && specificInstanceId) {
-        const instance = instances[specificInstanceId];
-        if (instance) {
-          // Single applet instance - show its window
-          const { label } = getAppletInfo(instance);
-          const isForeground = !!(instance.isForeground && !instance.isMinimized);
-          items.push({
-            type: "checkbox",
-            label: `${label}${instance.isMinimized ? ` ${t("common.dock.minimized")}` : ""}`,
-            checked: isForeground,
-            onSelect: () => {
-              if (instance.isMinimized) {
-                restoreInstance(specificInstanceId);
-              }
-              bringInstanceToForeground(specificInstanceId);
-            },
-          });
-          
-          items.push({ type: "separator" });
-          
-          // Show All Windows (Expose View)
-          items.push({
-            type: "item",
-            label: t("common.dock.showAllWindows"),
-            onSelect: () => {
-              // Trigger Expose View
-              window.dispatchEvent(new CustomEvent("toggleExposeView"));
-            },
-          });
-          
-          // Hide
-          items.push({
-            type: "item",
-            label: t("common.dock.hide"),
-            onSelect: () => {
-              playZoomMinimize();
-              minimizeInstance(specificInstanceId);
-            },
-            disabled: instance.isMinimized,
-          });
-          
-          // Quit
-          items.push({
-            type: "item",
-            label: t("common.dock.quit"),
-            onSelect: () => {
-              // If minimized, close directly without animation/sound (window isn't visible)
-              if (instance.isMinimized) {
-                closeAppInstance(specificInstanceId);
-              } else {
-                requestCloseWindow(specificInstanceId);
-              }
-            },
-          });
-          
-          return items;
-        }
-      }
+
       
       // List existing windows if any
       if (appInstances.length > 0) {
@@ -1675,7 +1558,7 @@ function MacDock() {
       
       return items;
     },
-    [instances, finderInstances, getAppletInfo, restoreInstance, bringInstanceToForeground, minimizeInstance, closeAppInstance, playZoomMinimize, launchApp, pinnedItems, removeDockItem, addDockItem]
+    [instances, finderInstances, restoreInstance, bringInstanceToForeground, minimizeInstance, closeAppInstance, playZoomMinimize, launchApp, pinnedItems, removeDockItem, addDockItem]
   );
 
   // Generate context menu items for a folder shortcut
@@ -1858,7 +1741,7 @@ function MacDock() {
       
       return items;
     },
-    [fileStore, focusFinderAtPathOrLaunch, focusOrLaunchFinder, focusOrLaunchApp, isTrashEmpty, t, getTranslatedAppName, getTranslatedFolderNameFromName, isAdmin]
+    [fileStore, focusFinderAtPathOrLaunch, focusOrLaunchFinder, focusOrLaunchApp, isTrashEmpty, t, getTranslatedAppName, getTranslatedFolderNameFromName]
   );
 
   // Handle app context menu
@@ -2153,11 +2036,7 @@ function MacDock() {
                         idKey={item.id}
                         isEmoji={isEmojiIcon || (!item.icon?.startsWith("/") && !item.icon?.startsWith("http"))}
                         onClick={() => {
-                          if (item.path) {
-                            launchApp("applet-viewer", {
-                              initialData: { path: item.path },
-                            });
-                          }
+                          // Applet viewer removed - do nothing for file items
                         }}
                         mouseX={mouseX}
                         magnifyEnabled={effectiveMagnifyEnabled}
@@ -2201,72 +2080,35 @@ function MacDock() {
                 />
               )}
 
-              {/* Open apps and applet instances dynamically (excluding pinned) */}
+              {/* Open apps dynamically (excluding pinned) */}
               {openItems.map((item) => {
-                if (item.type === "applet" && item.instanceId) {
-                  // Render individual applet instance
-                  const instance = instances[item.instanceId];
-                  if (!instance) return null;
-
-                  const { icon, label, isEmoji } = getAppletInfo(instance);
-                  return (
-                    <IconButton
-                      key={item.instanceId}
-                      label={label}
-                      icon={icon}
-                      idKey={item.instanceId}
-                      onClick={() => {
-                        // If minimized, restore it; otherwise just bring to foreground
-                        if (instance.isMinimized) {
-                          restoreInstance(item.instanceId!);
-                        } else {
-                          bringInstanceToForeground(item.instanceId!);
-                        }
-                      }}
-                      onContextMenu={(e) => handleAppContextMenu(e, "applet-viewer", item.instanceId)}
-                      showIndicator
-                      isLoading={instance.isLoading}
-                      isEmoji={isEmoji}
-                      mouseX={mouseX}
-                      magnifyEnabled={effectiveMagnifyEnabled}
-                      isNew={hasMounted && !seenIdsRef.current.has(item.instanceId!)}
-                      isHovered={hoveredId === item.instanceId}
-                      isSwapping={isSwapping}
-                      onHover={() => handleIconHover(item.instanceId!)}
-                      onLeave={handleIconLeave}
-                      baseSize={scaledButtonSize}
-                    />
-                  );
-                } else {
-                  // Render regular app
-                  const icon = getAppIconPath(item.appId);
-                  const label = getTranslatedAppName(item.appId);
-                  const isLoading = Object.values(instances).some(
-                    (i) => i.appId === item.appId && i.isOpen && i.isLoading
-                  );
-                  return (
-                    <IconButton
-                      key={item.appId}
-                      label={label}
-                      icon={icon}
-                      idKey={item.appId}
-                      onClick={() => focusMostRecentInstanceOfApp(item.appId)}
-                      onContextMenu={(e) => handleAppContextMenu(e, item.appId)}
-                      showIndicator
-                      isLoading={isLoading}
-                      mouseX={mouseX}
-                      magnifyEnabled={effectiveMagnifyEnabled}
-                      isNew={hasMounted && !seenIdsRef.current.has(item.appId)}
-                      isHovered={hoveredId === item.appId}
-                      isSwapping={isSwapping}
-                      onHover={() => handleIconHover(item.appId)}
-                      onLeave={handleIconLeave}
-                      draggable
-                      onDragStart={(e) => handleNonPinnedDragStart(e, item.appId)}
-                      baseSize={scaledButtonSize}
-                    />
-                  );
-                }
+                const icon = getAppIconPath(item.appId);
+                const label = getTranslatedAppName(item.appId);
+                const isLoading = Object.values(instances).some(
+                  (i) => i.appId === item.appId && i.isOpen && i.isLoading
+                );
+                return (
+                  <IconButton
+                    key={item.appId}
+                    label={label}
+                    icon={icon}
+                    idKey={item.appId}
+                    onClick={() => focusMostRecentInstanceOfApp(item.appId)}
+                    onContextMenu={(e) => handleAppContextMenu(e, item.appId)}
+                    showIndicator
+                    isLoading={isLoading}
+                    mouseX={mouseX}
+                    magnifyEnabled={effectiveMagnifyEnabled}
+                    isNew={hasMounted && !seenIdsRef.current.has(item.appId)}
+                    isHovered={hoveredId === item.appId}
+                    isSwapping={isSwapping}
+                    onHover={() => handleIconHover(item.appId)}
+                    onLeave={handleIconLeave}
+                    draggable
+                    onDragStart={(e) => handleNonPinnedDragStart(e, item.appId)}
+                    baseSize={scaledButtonSize}
+                  />
+                );
               })}
 
               {/* Divider between open apps and Applications/Trash */}

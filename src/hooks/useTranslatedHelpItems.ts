@@ -14,21 +14,9 @@ export function useTranslatedHelpItems(
 
   const helpKeys: Record<AppId, string[]> = {
     finder: ["browseNavigate", "fileManagement", "viewSort", "quickAccess", "storageInfo", "trash"],
-    soundboard: ["recordSlot", "keyboardPlay", "waveformView", "customizeSlot", "multipleBoards", "importExport"],
-    "internet-explorer": ["browseWeb", "travelThroughTime", "historyReimagined", "saveFavorites", "exploreTimeNodes", "shareJourney"],
-    chats: ["chatWithRyo", "createEditFiles", "controlApps", "joinChatRooms", "pushToTalk", "nudgeDjMode"],
     textedit: ["richEditing", "formatting", "listsTasks", "fileManagement", "voiceDictation", "slashCommands"],
     paint: ["drawingTools", "colors", "undo", "saving", "patterns", "filters"],
-    "photo-booth": ["takingPhoto", "quickSnaps", "applyingEffects", "viewingPhotos", "downloadingPhotos", "switchingCameras"],
-    minesweeper: ["desktopControls", "mobileControls", "gameRules", "timerCounter", "restart"],
-    videos: ["addVideo", "playback", "loop", "shuffle", "playlist", "retroUi"],
-    ipod: ["addSongs", "wheelNavigation", "playbackControls", "syncedLyrics", "playbackModes", "displayFullscreen"],
-    synth: ["virtualKeyboard", "controlsPanel", "presets", "waveform3d", "effects", "midiInput"],
-    pc: ["pcEmulator", "keyboardControls", "mouseCapture", "fullscreenMode", "saveStates", "aspectRatio"],
-    terminal: ["basicCommands", "navigation", "commandHistory", "aiAssistant", "fileEditing", "terminalSounds"],
-    "applet-viewer": ["appletStore", "createWithRyosChat", "viewApplets", "shareApplets", "openFromFinder", "keepUpdated"],
     "control-panels": ["appearance", "sounds", "aiModel", "shaderEffects", "backupRestore", "system"],
-    admin: ["adminAccess", "userManagement", "roomManagement", "statistics"],
   };
 
   return useMemo(() => {
@@ -48,4 +36,3 @@ export function useTranslatedHelpItems(
     });
   }, [appId, originalHelpItems, t]);
 }
-

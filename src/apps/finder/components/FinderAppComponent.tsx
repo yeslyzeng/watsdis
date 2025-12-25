@@ -26,7 +26,7 @@ import { RightClickMenu, MenuItem } from "@/components/ui/right-click-menu";
 import { useLongPress } from "@/hooks/useLongPress";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { toast } from "sonner";
-import { importAppletFile } from "@/utils/appletImportExport";
+
 import { useTranslation } from "react-i18next";
 import { useTranslatedHelpItems } from "@/hooks/useTranslatedHelpItems";
 import { getTranslatedFolderNameFromName } from "@/utils/i18n";
@@ -475,165 +475,33 @@ export function FinderAppComponent({
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      const fileExtension = file.name.toLowerCase();
-      const isAppletFile = fileExtension.endsWith(".app") || fileExtension.endsWith(".gz");
-      const isAppletsDir = currentPath === "/Applets";
-      
-      // .app and .gz files always go to /Applets, regardless of current directory
-      if (isAppletFile) {
-        try {
-          // Use shared import function
-          const importedData = await importAppletFile(file);
-
-          const filePath = `/Applets/${importedData.name}`;
-          const fileStore = useFilesStore.getState();
-
-          await saveFile({
-            name: importedData.name,
-            path: filePath,
-            content: importedData.content,
-            type: "html",
-            icon: importedData.icon,
-            shareId: importedData.shareId,
-            createdBy: importedData.createdBy,
-          });
-          
-          // Update additional metadata if present
-          if (importedData.windowWidth || importedData.windowHeight || importedData.createdAt || importedData.modifiedAt) {
-            fileStore.updateItemMetadata(filePath, {
-              ...(importedData.windowWidth !== undefined && { windowWidth: importedData.windowWidth }),
-              ...(importedData.windowHeight !== undefined && { windowHeight: importedData.windowHeight }),
-              ...(importedData.createdAt !== undefined && { createdAt: importedData.createdAt }),
-              ...(importedData.modifiedAt !== undefined && { modifiedAt: importedData.modifiedAt }),
-            });
-          }
-
-          // Notify file was added
-          const event = new CustomEvent("saveFile", {
-            detail: {
-              name: importedData.name,
-              path: filePath,
-              content: importedData.content,
-              icon: importedData.icon,
-            },
-          });
-          window.dispatchEvent(event);
-
-          toast.success(t("apps.finder.messages.appletImported"), {
-            description: t("apps.finder.messages.appletImportedDesc", {
-              name: importedData.name,
-              iconText: importedData.icon
-                ? t("apps.finder.messages.appletImportedIconText", { icon: importedData.icon })
-                : "",
-            }),
-          });
-          
-          // Navigate to /Applets if not already there
-          if (!isAppletsDir) {
-            navigateToPath("/Applets");
-          }
-        } catch (error) {
-          console.error("Import failed:", error);
-          toast.error(t("apps.finder.messages.importFailed"), {
-            description: t("apps.finder.messages.importFailedAppletDesc"),
-          });
-        } finally {
-          e.target.value = "";
-        }
+      // Accept text and markdown files
+      if (!file.type.startsWith("text/") && !file.name.endsWith(".md")) {
+        e.target.value = "";
         return;
       }
 
-      // Check if we're in Applets directory for HTML files
-      if (isAppletsDir) {
-        // In Applets: accept .html and .htm files
-        if (
-          !fileExtension.endsWith(".html") &&
-          !fileExtension.endsWith(".htm")
-        ) {
-          toast.error(t("apps.finder.messages.invalidFileType"), {
-            description: t("apps.finder.messages.invalidFileTypeDesc"),
-          });
-          e.target.value = "";
-          return;
-        }
-      } else {
-        // In other directories: accept text and markdown files
-        if (!file.type.startsWith("text/") && !file.name.endsWith(".md")) {
-          e.target.value = "";
-          return;
-        }
-      }
-
       try {
-        // Handle applet HTML files (when in /Applets directory)
-        if (isAppletsDir) {
-          // Use shared import function
-          const importedData = await importAppletFile(file);
+        // Handle regular text files
+        const text = await file.text();
+        const fileName = file.name;
+        const basePath = currentPath === "/" ? "" : currentPath;
+        const filePath = `${basePath}/${fileName}`;
 
-          const filePath = `/Applets/${importedData.name}`;
-          const fileStore = useFilesStore.getState();
+        await saveFile({
+          name: fileName,
+          path: filePath,
+          content: text,
+        });
 
-          await saveFile({
-            name: importedData.name,
-            path: filePath,
-            content: importedData.content,
-            type: "html",
-            icon: importedData.icon,
-            shareId: importedData.shareId,
-            createdBy: importedData.createdBy,
-          });
-          
-          // Update additional metadata if present
-          if (importedData.windowWidth || importedData.windowHeight || importedData.createdAt || importedData.modifiedAt) {
-            fileStore.updateItemMetadata(filePath, {
-              ...(importedData.windowWidth !== undefined && { windowWidth: importedData.windowWidth }),
-              ...(importedData.windowHeight !== undefined && { windowHeight: importedData.windowHeight }),
-              ...(importedData.createdAt !== undefined && { createdAt: importedData.createdAt }),
-              ...(importedData.modifiedAt !== undefined && { modifiedAt: importedData.modifiedAt }),
-            });
-          }
-
-          // Notify file was added
-          const event = new CustomEvent("saveFile", {
-            detail: {
-              name: importedData.name,
-              path: filePath,
-              content: importedData.content,
-              icon: importedData.icon,
-            },
-          });
-          window.dispatchEvent(event);
-
-          toast.success(t("apps.finder.messages.appletImported"), {
-            description: t("apps.finder.messages.appletImportedDesc", {
-              name: importedData.name,
-              iconText: importedData.icon
-                ? t("apps.finder.messages.appletImportedIconText", { icon: importedData.icon })
-                : "",
-            }),
-          });
-        } else {
-          // Handle regular text files
-          const text = await file.text();
-          const fileName = file.name;
-          const basePath = currentPath === "/" ? "" : currentPath;
-          const filePath = `${basePath}/${fileName}`;
-
-          await saveFile({
+        // Notify file was added
+        const event = new CustomEvent("fileUpdated", {
+          detail: {
             name: fileName,
             path: filePath,
-            content: text,
-          });
-
-          // Notify file was added
-          const event = new CustomEvent("fileUpdated", {
-            detail: {
-              name: fileName,
-              path: filePath,
-            },
-          });
-          window.dispatchEvent(event);
-        }
+          },
+        });
+        window.dispatchEvent(event);
 
         // Clear the input
         e.target.value = "";

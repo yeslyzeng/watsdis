@@ -444,7 +444,7 @@ async function saveDefaultContents(
 const getEmptyFileSystemState = (): Record<string, FileSystemItem> => ({});
 
 const STORE_VERSION = 10; // Update Applets folder icon
-const STORE_NAME = "ryos:files";
+const STORE_NAME = "desktop:files";
 
 const initialFilesData: FilesStoreState = {
   items: getEmptyFileSystemState(),
@@ -1123,9 +1123,8 @@ export const useFilesStore = create<FilesStoreState>()(
               shortcutsToCreate.push({
                 appId,
                 appName: app.name,
-                // Apply hiddenOnThemes for non-iPod/AppletViewer
-                // This ensures they are hidden on macOS X theme but visible on others
-                hiddenOnThemes: appId !== "ipod" && appId !== "applet-viewer" ? ["macosx"] : [],
+                // Apply hiddenOnThemes to hide on macOS X theme
+                hiddenOnThemes: ["macosx"],
               });
             }
           }

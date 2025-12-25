@@ -5,7 +5,7 @@ import { TextEditMenuBar } from "./TextEditMenuBar";
 import { EditorProvider, useEditorContext } from "./EditorProvider";
 import { EditorToolbar } from "./EditorToolbar";
 import { TextEditor } from "./TextEditor";
-import { SpeechManager } from "./SpeechManager";
+
 import { DialogManager, DialogControls } from "./DialogManager";
 import { useTextEditState } from "../hooks/useTextEditState";
 import { useFileOperations } from "../hooks/useFileOperations";
@@ -34,7 +34,7 @@ function TextEditContent({
 }: AppProps) {
   const { t } = useTranslation();
   const editor = useEditorContext();
-  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const launchApp = useLaunchApp();
   const clearInitialData = useAppStore((state) => state.clearInitialData);
@@ -336,25 +336,7 @@ function TextEditContent({
     }
   }, [contentJson, editor, setHasUnsavedChanges]);
 
-  const handleTranscriptionComplete = (text: string) => {
-    setIsTranscribing(false);
-    if (editor) {
-      if (!editor.isFocused) {
-        editor.commands.focus();
-      }
 
-      if (editor.state.selection.empty && editor.state.selection.anchor === 0) {
-        editor.commands.setTextSelection(editor.state.doc.content.size);
-        editor.commands.insertContent("\n");
-      }
-
-      editor.commands.insertContent(text);
-    }
-  };
-
-  const handleTranscriptionStart = () => {
-    setIsTranscribing(true);
-  };
 
   const handleNewFile = () => {
     const newInstanceId = launchAppInstance("textedit", null, t("apps.textedit.untitled"), true);
@@ -555,25 +537,16 @@ function TextEditContent({
             }`}
             {...dragHandlers}
           >
-            <SpeechManager editor={editor} speechEnabled={speechEnabled}>
-              {({ isSpeaking, isTtsLoading, handleSpeak }) => (
-                <>
-                  <EditorToolbar
-                    editor={editor}
-                    currentTheme={currentTheme}
-                    speechEnabled={speechEnabled}
-                    isTranscribing={isTranscribing}
-                    isTtsLoading={isTtsLoading}
-                    isSpeaking={isSpeaking}
-                    onTranscriptionComplete={handleTranscriptionComplete}
-                    onTranscriptionStart={handleTranscriptionStart}
-                    onSpeak={handleSpeak}
-                  />
-                  {/* Editor content container with correct positioning */}
-                  <TextEditor className="flex-1 overflow-y-auto w-full min-h-0 bg-white" />
-                </>
-              )}
-            </SpeechManager>
+            <EditorToolbar
+              editor={editor}
+              currentTheme={currentTheme}
+              speechEnabled={speechEnabled}
+              isTtsLoading={false}
+              isSpeaking={false}
+              onSpeak={() => {}}
+            />
+            {/* Editor content container with correct positioning */}
+            <TextEditor className="flex-1 overflow-y-auto w-full min-h-0 bg-white" />
           </div>
 
           <DialogManager

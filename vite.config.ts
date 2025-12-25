@@ -66,9 +66,9 @@ export default defineConfig({
         "fonts/*.ttf",
       ],
       manifest: {
-        name: "ryOS",
-        short_name: "ryOS",
-        description: "An AI OS experience, made with Cursor",
+        name: "Desktop",
+        short_name: "Desktop",
+        description: "A web-based desktop environment",
         theme_color: "#000000",
         background_color: "#000000",
         display: "standalone",
@@ -102,21 +102,9 @@ export default defineConfig({
           /^\/iframe-check/,  // iframe proxy endpoint
           /^\/404/,  // Don't intercept 404 redirects
           // App routes handled by middleware for OG preview links
-          // These need to reach the middleware first, then redirect to ?_ryo=1
           /^\/finder$/,
-          /^\/soundboard$/,
-          /^\/internet-explorer(\/|$)/,
-          /^\/chats$/,
           /^\/textedit$/,
           /^\/paint$/,
-          /^\/photo-booth$/,
-          /^\/minesweeper$/,
-          /^\/videos(\/|$)/,
-          /^\/ipod(\/|$)/,
-          /^\/synth$/,
-          /^\/pc$/,
-          /^\/terminal$/,
-          /^\/applet-viewer(\/|$)/,
           /^\/control-panels$/,
         ],
         // Enable navigation fallback to precached index.html for offline support

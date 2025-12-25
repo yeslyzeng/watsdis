@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { AppId, getWindowConfig } from "@/config/appRegistry";
-import { useAppletStore } from "@/stores/useAppletStore";
+
 import { appIds } from "@/config/appIds";
 import { AppManagerState, AppState } from "@/apps/base/types";
 import { checkShaderPerformance } from "@/utils/performanceCheck";
@@ -154,11 +154,11 @@ interface AppStoreState extends AppManagerState {
   screenSaverIdleTime: number; // minutes
   setScreenSaverIdleTime: (v: number) => void;
   
-  // ryOS version (fetched from version.json)
-  ryOSVersion: string | null;
-  ryOSBuildNumber: string | null;
-  ryOSBuildTime: string | null;
-  setRyOSVersion: (version: string, buildNumber: string, buildTime?: string) => void;
+  // Desktop version (fetched from version.json)
+  desktopVersion: string | null;
+  desktopBuildNumber: string | null;
+  desktopBuildTime: string | null;
+  setDesktopVersion: (version: string, buildNumber: string, buildTime?: string) => void;
 }
 
 const CURRENT_APP_STORE_VERSION = 4; // bump to force wallpaper update
@@ -223,15 +223,15 @@ export const useAppStore = create<AppStoreState>()(
       screenSaverIdleTime: 5, // 5 minutes default
       setScreenSaverIdleTime: (v) => set({ screenSaverIdleTime: v }),
 
-      // ryOS version (fetched from version.json)
-      ryOSVersion: null,
-      ryOSBuildNumber: null,
-      ryOSBuildTime: null,
-      setRyOSVersion: (version, buildNumber, buildTime) =>
+      // Desktop version (fetched from version.json)
+      desktopVersion: null,
+      desktopBuildNumber: null,
+      desktopBuildTime: null,
+      setDesktopVersion: (version, buildNumber, buildTime) =>
         set({
-          ryOSVersion: version,
-          ryOSBuildNumber: buildNumber,
-          ryOSBuildTime: buildTime || null,
+          desktopVersion: version,
+          desktopBuildNumber: buildNumber,
+          desktopBuildTime: buildTime || null,
         }),
 
       updateWindowState: (appId, position, size) =>
@@ -540,20 +540,6 @@ export const useAppStore = create<AppStoreState>()(
             ? { width: window.innerWidth, height: cfg.defaultSize.height }
             : cfg.defaultSize;
 
-          // If creating an Applet Viewer window and we have a path, prefer saved size
-          if (appId === "applet-viewer") {
-            try {
-              const path = (initialData as { path?: string } | undefined)?.path;
-              if (path) {
-                const saved = useAppletStore
-                  .getState()
-                  .getAppletWindowSize(path);
-                if (saved) size = saved;
-              }
-            } catch {
-              // ignore and fall back to default size
-            }
-          }
 
           // Check if app is lazy (most are, except Finder which is critical)
           // We can assume non-Finder apps might need loading time
@@ -893,7 +879,7 @@ export const useAppStore = create<AppStoreState>()(
           multiWindow ||
           appId === "textedit" ||
           appId === "finder" ||
-          appId === "applet-viewer";
+          false;
         if (!supportsMultiWindow) {
           const existing = Object.values(state.instances).find(
             (i) => i.appId === appId && i.isOpen
@@ -933,7 +919,7 @@ export const useAppStore = create<AppStoreState>()(
       },
     }),
     {
-      name: "ryos:app-store",
+      name: "desktop:app-store",
       version: CURRENT_APP_STORE_VERSION,
 
       partialize: (state): Partial<AppStoreState> => ({
@@ -964,9 +950,9 @@ export const useAppStore = create<AppStoreState>()(
         ttsVoice: state.ttsVoice,
         ipodVolume: state.ipodVolume,
         masterVolume: state.masterVolume,
-        ryOSVersion: state.ryOSVersion,
-        ryOSBuildNumber: state.ryOSBuildNumber,
-        ryOSBuildTime: state.ryOSBuildTime,
+        desktopVersion: state.desktopVersion,
+        desktopBuildNumber: state.desktopBuildNumber,
+        desktopBuildTime: state.desktopBuildTime,
         screenSaverEnabled: state.screenSaverEnabled,
         screenSaverType: state.screenSaverType,
         screenSaverIdleTime: state.screenSaverIdleTime,
@@ -974,17 +960,6 @@ export const useAppStore = create<AppStoreState>()(
           Object.entries(state.instances)
             .filter(([, inst]) => inst.isOpen)
             .map(([id, inst]) => {
-              // For applet-viewer, exclude content from initialData to prevent localStorage storage
-              if (inst.appId === "applet-viewer" && inst.initialData) {
-                const appletData = inst.initialData as { path?: string; content?: string; shareCode?: string; icon?: string; name?: string };
-                return [id, {
-                  ...inst,
-                  initialData: {
-                    ...appletData,
-                    content: "", // Exclude content - it should be loaded from IndexedDB
-                  },
-                }];
-              }
               return [id, inst];
             })
         ),

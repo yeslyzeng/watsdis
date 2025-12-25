@@ -21,7 +21,7 @@ import i18n from "@/lib/i18n";
 import { getApiUrl, isTauri } from "@/utils/platform";
 
 // Storage key for manifest timestamp (for cache invalidation)
-const MANIFEST_KEY = 'ryos-manifest-timestamp';
+const MANIFEST_KEY = 'desktop-manifest-timestamp';
 
 // Periodic update check interval (5 minutes)
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000;
@@ -36,8 +36,8 @@ let isUpdateInProgress = false;
 function getStoredVersion(): { version: string | null; buildNumber: string | null } {
   const state = useAppStore.getState();
   return {
-    version: state.ryOSVersion,
-    buildNumber: state.ryOSBuildNumber,
+    version: state.desktopVersion,
+    buildNumber: state.desktopBuildNumber,
   };
 }
 
@@ -45,7 +45,7 @@ function getStoredVersion(): { version: string | null; buildNumber: string | nul
  * Store version in the app store (call after successful prefetch)
  */
 function storeVersion(version: string, buildNumber: string, buildTime?: string): void {
-  useAppStore.getState().setRyOSVersion(version, buildNumber, buildTime);
+  useAppStore.getState().setDesktopVersion(version, buildNumber, buildTime);
   console.log(`[Prefetch] Stored version: ${version} (${buildNumber})`);
 }
 
@@ -58,9 +58,9 @@ function storeVersion(version: string, buildNumber: string, buildTime?: string):
 async function reloadPage(version?: string, buildNumber?: string): Promise<void> {
   // Set boot message to show boot screen after reload
   if (version && buildNumber) {
-    setNextBootMessage(i18n.t("common.system.updatingToRyOSWithBuild", { version, buildNumber }));
+    setNextBootMessage(i18n.t("common.system.updatingWithBuild", { version, buildNumber }));
   } else if (version) {
-    setNextBootMessage(i18n.t("common.system.updatingToRyOS", { version }));
+    setNextBootMessage(i18n.t("common.system.updating", { version }));
   } else {
     setNextBootMessage(i18n.t("common.system.rebooting"));
   }
@@ -259,7 +259,7 @@ async function checkAndUpdate(isManual: boolean = false): Promise<void> {
     if (isManual) {
       const stored = getStoredVersion();
       toast.success('Already running the latest version', {
-        description: stored.version ? `ryOS ${stored.version} (${stored.buildNumber})` : undefined,
+        description: stored.version ? `Desktop ${stored.version} (${stored.buildNumber})` : undefined,
       });
     }
     return;
@@ -313,7 +313,7 @@ export async function forceRefreshCache(): Promise<void> {
   // If already on latest version, just show success message without reboot
   if (!isNewVersion) {
     toast.success('Already running the latest version', {
-      description: stored.version ? `ryOS ${stored.version} (${stored.buildNumber})` : undefined,
+      description: stored.version ? `Desktop ${stored.version} (${stored.buildNumber})` : undefined,
     });
     return;
   }
@@ -776,7 +776,7 @@ export function initPrefetch(): void {
     window.history.replaceState({}, '', url.toString());
     // Clear the stale reload flag since we successfully loaded fresh content
     try {
-      sessionStorage.removeItem('ryos-stale-reload');
+      sessionStorage.removeItem('desktop-stale-reload');
     } catch {
       // sessionStorage might not be available
     }

@@ -49,7 +49,7 @@ interface FinderStoreState {
 }
 
 const STORE_VERSION = 3;
-const STORE_NAME = "ryos:finder";
+const STORE_NAME = "desktop:finder";
 
 export const useFinderStore = create<FinderStoreState>()(
   persist(

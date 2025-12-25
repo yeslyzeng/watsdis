@@ -2,21 +2,9 @@ import i18n from "@/lib/i18n";
 
 export type AppId =
   | "finder"
-  | "soundboard"
-  | "internet-explorer"
-  | "chats"
   | "textedit"
   | "paint"
-  | "photo-booth"
-  | "minesweeper"
-  | "videos"
-  | "ipod"
-  | "synth"
-  | "pc"
-  | "terminal"
-  | "applet-viewer"
-  | "control-panels"
-  | "admin";
+  | "control-panels";
 
 /**
  * Get translated app name
@@ -48,10 +36,6 @@ export function getTranslatedFolderName(folderPath: string): string {
     "/Applications": "applications",
     "/Documents": "documents",
     "/Images": "images",
-    "/Music": "music",
-    "/Videos": "videos",
-    "/Sites": "sites",
-    "/Applets": "applets",
     "/Trash": "trash",
     "/Desktop": "desktop",
   };
@@ -77,10 +61,6 @@ export function getTranslatedFolderNameFromName(folderName: string): string {
     "Applications": "applications",
     "Documents": "documents",
     "Images": "images",
-    "Music": "music",
-    "Videos": "videos",
-    "Sites": "sites",
-    "Applets": "applets",
     "Trash": "trash",
     "Desktop": "desktop",
   };
@@ -106,21 +86,9 @@ export function getTranslatedHelpItems(appId: AppId): Array<{
 }> {
   const helpKeys: Record<AppId, string[]> = {
     finder: ["browseNavigate", "fileManagement", "viewSort", "quickAccess", "storageInfo", "trash"],
-    soundboard: ["recordSlot", "keyboardPlay", "waveformView", "customizeSlot", "multipleBoards", "importExport"],
-    "internet-explorer": ["browseWeb", "travelThroughTime", "historyReimagined", "saveFavorites", "exploreTimeNodes", "shareJourney"],
-    chats: ["chatWithRyo", "createEditFiles", "controlApps", "joinChatRooms", "pushToTalk", "nudgeDjMode"],
     textedit: ["richEditing", "formatting", "listsTasks", "fileManagement", "voiceDictation", "slashCommands"],
     paint: ["drawingTools", "colors", "undo", "saving", "patterns", "filters"],
-    "photo-booth": ["takingPhoto", "quickSnaps", "applyingEffects", "viewingPhotos", "downloadingPhotos", "switchingCameras"],
-    minesweeper: ["desktopControls", "mobileControls", "gameRules", "timerCounter", "restart"],
-    videos: ["addVideo", "playback", "loop", "shuffle", "playlist", "retroUi"],
-    ipod: ["addSongs", "wheelNavigation", "playbackControls", "syncedLyrics", "playbackModes", "displayFullscreen"],
-    synth: ["virtualKeyboard", "controlsPanel", "presets", "waveform3d", "effects", "midiInput"],
-    pc: ["pcEmulator", "keyboardControls", "mouseCapture", "fullscreenMode", "saveStates", "aspectRatio"],
-    terminal: ["basicCommands", "navigation", "commandHistory", "aiAssistant", "fileEditing", "terminalSounds"],
-    "applet-viewer": ["appletStore", "createWithRyosChat", "viewApplets", "shareApplets", "openFromFinder", "keepUpdated"],
     "control-panels": ["appearance", "sounds", "aiModel", "shaderEffects", "backupRestore", "system"],
-    admin: ["adminAccess", "userManagement", "roomManagement", "statistics"],
   };
 
   const keys = helpKeys[appId] || [];

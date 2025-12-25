@@ -1,4 +1,4 @@
-export const BOOT_MESSAGE_KEY = "ryos:nextBootMessage";
+export const BOOT_MESSAGE_KEY = "desktop:nextBootMessage";
 
 export const setNextBootMessage = (message: string): void => {
   try {
@@ -23,4 +23,4 @@ export const clearNextBootMessage = (): void => {
   } catch (error) {
     console.error("Error clearing boot message from sessionStorage:", error);
   }
-}; 
+};

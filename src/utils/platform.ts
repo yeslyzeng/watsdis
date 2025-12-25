@@ -23,7 +23,8 @@ export function isWeb(): boolean {
  */
 export function getApiBaseUrl(): string {
   if (isTauri()) {
-    return "https://os.ryo.lu";
+    // Update this to your own API URL when deploying
+    return "";
   }
   return "";
 }
@@ -32,7 +33,7 @@ export function getApiBaseUrl(): string {
  * Get the full API URL for a given path.
  * Automatically handles Tauri vs web differences.
  * @param path - API path (e.g., "/api/chat")
- * @returns Full URL (e.g., "https://os.ryo.lu/api/chat" in Tauri, "/api/chat" in web)
+ * @returns Full URL
  */
 export function getApiUrl(path: string): string {
   const baseUrl = getApiBaseUrl();
@@ -63,4 +64,3 @@ export function isTauriWindows(): boolean {
   // If WebKit (no window.chrome), it's Mac
   return hasChrome;
 }
-

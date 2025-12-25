@@ -4,9 +4,9 @@ import { ControlPanelsMenuBar } from "./ControlPanelsMenuBar";
 import { HelpDialog } from "@/components/dialogs/HelpDialog";
 import { AboutDialog } from "@/components/dialogs/AboutDialog";
 import { ConfirmDialog } from "@/components/dialogs/ConfirmDialog";
-import { LoginDialog } from "@/components/dialogs/LoginDialog";
-import { InputDialog } from "@/components/dialogs/InputDialog";
-import { LogoutDialog } from "@/components/dialogs/LogoutDialog";
+
+
+
 import { helpItems, appMetadata } from "..";
 import { useTranslatedHelpItems } from "@/hooks/useTranslatedHelpItems";
 import { getTranslatedAppName } from "@/utils/i18n";
@@ -26,7 +26,7 @@ import { ScreenSaverPicker } from "./ScreenSaverPicker";
 import { AppProps, ControlPanelsInitialData } from "@/apps/base/types";
 import { clearAllAppStates } from "@/stores/useAppStore";
 import { ensureIndexedDBInitialized } from "@/utils/indexedDB";
-import { SYNTH_PRESETS } from "@/hooks/useChatSynth";
+import { SYNTH_PRESETS } from "@/types/synthPresets";
 import { useFileSystem } from "@/apps/finder/hooks/useFileSystem";
 import { useAppStoreShallow } from "@/stores/helpers";
 import { setNextBootMessage, clearNextBootMessage } from "@/utils/bootMessage";
@@ -34,11 +34,11 @@ import { clearPrefetchFlag, forceRefreshCache } from "@/utils/prefetch";
 import { AIModel, AI_MODEL_METADATA } from "@/types/aiModels";
 import { VolumeMixer } from "./VolumeMixer";
 import { v4 as uuidv4 } from "uuid";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+
+
 import React from "react";
 import { useThemeStore } from "@/stores/useThemeStore";
-import { getApiUrl } from "@/utils/platform";
+
 import { themes } from "@/themes";
 import { OsThemeId } from "@/themes/types";
 import { getTabStyles } from "@/utils/tabStyles";
@@ -189,46 +189,17 @@ const base64ToBlob = (dataUrl: string): Blob => {
 
 // Version display component that reads from app store
 function VersionDisplay() {
-  const { t } = useTranslation();
-  const { ryOSVersion, ryOSBuildNumber } = useAppStoreShallow((state) => ({
-    ryOSVersion: state.ryOSVersion,
-    ryOSBuildNumber: state.ryOSBuildNumber,
+  const { desktopVersion, desktopBuildNumber } = useAppStoreShallow((state) => ({
+    desktopVersion: state.desktopVersion,
+    desktopBuildNumber: state.desktopBuildNumber,
   }));
-  const [desktopVersion, setDesktopVersion] = React.useState<string | null>(null);
-  const isMac = React.useMemo(() => 
-    typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac'), 
-    []
-  );
   
-  // Fetch desktop version for download link
-  React.useEffect(() => {
-    if (isMac) {
-      fetch('/version.json', { cache: 'no-store' })
-        .then(res => res.json())
-        .then(data => setDesktopVersion(data.desktopVersion))
-        .catch(() => setDesktopVersion('1.0.1')); // fallback
-    }
-  }, [isMac]);
-  
-  const displayVersion = ryOSVersion || "...";
-  const displayBuild = ryOSBuildNumber ? ` (Build ${ryOSBuildNumber})` : "";
+  const displayVersion = desktopVersion || "...";
+  const displayBuild = desktopBuildNumber ? ` (Build ${desktopBuildNumber})` : "";
   
   return (
     <p className="text-[11px] text-gray-600 font-geneva-12">
-      ryOS {displayVersion}{displayBuild}
-      {isMac && desktopVersion && (
-        <>
-          {" · "}
-          <a 
-            href={`https://github.com/ryokun6/ryos/releases/download/v${desktopVersion}/ryOS_${desktopVersion}_aarch64.dmg`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
-            {t("apps.control-panels.downloadMacApp")}
-          </a>
-        </>
-      )}
+      Desktop {displayVersion}{displayBuild}
     </p>
   );
 }
@@ -320,130 +291,6 @@ export function ControlPanelsAppComponent({
   const { current: currentLanguage, setLanguage } = useLanguageStore();
   const { t } = useTranslation();
 
-  // Use auth hook
-  const {
-    username,
-    authToken,
-    promptSetUsername,
-    isUsernameDialogOpen,
-    setIsUsernameDialogOpen,
-    newUsername,
-    setNewUsername,
-    newPassword,
-    setNewPassword,
-    isSettingUsername,
-    usernameError,
-    submitUsernameDialog,
-    promptVerifyToken,
-    isVerifyDialogOpen,
-    setVerifyDialogOpen,
-    verifyPasswordInput,
-    setVerifyPasswordInput,
-    verifyUsernameInput,
-    setVerifyUsernameInput,
-    hasPassword,
-    setPassword,
-    logout,
-    confirmLogout,
-    isLogoutConfirmDialogOpen,
-    setIsLogoutConfirmDialogOpen,
-    isVerifyingToken,
-    verifyError,
-    handleVerifyTokenSubmit,
-  } = useAuth();
-
-  // Password dialog states
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [isSettingPassword, setIsSettingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-
-  // Log out all devices state
-  const [isLoggingOutAllDevices, setIsLoggingOutAllDevices] = useState(false);
-
-  // Password status is now automatically checked by the store when username/token changes
-
-  // Debug hasPassword value
-  React.useEffect(() => {
-    console.log(
-      "[ControlPanel] hasPassword value:",
-      hasPassword,
-      "type:",
-      typeof hasPassword
-    );
-  }, [hasPassword]);
-
-  const handleSetPassword = async (password: string) => {
-    setIsSettingPassword(true);
-    setPasswordError(null);
-
-    if (!password || password.length < 8) {
-      setPasswordError("Password must be at least 8 characters");
-      setIsSettingPassword(false);
-      return;
-    }
-
-    const result = await setPassword(password);
-
-    if (result.ok) {
-      toast.success("Password Set", {
-        description: "You can now use your password to recover your account",
-      });
-      setIsPasswordDialogOpen(false);
-      setPasswordInput("");
-    } else {
-      setPasswordError(result.error || "Failed to set password");
-    }
-
-    setIsSettingPassword(false);
-  };
-
-  const handleLogoutAllDevices = async () => {
-    setIsLoggingOutAllDevices(true);
-
-    try {
-      // Ensure we have auth info from the auth hook
-      if (!authToken || !username) {
-        toast.error("Authentication Error", {
-          description: "No authentication token found",
-        });
-        return;
-      }
-
-      const response = await fetch(getApiUrl("/api/chat-rooms?action=logoutAllDevices"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-          "X-Username": username,
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Logged Out", {
-          description: data.message || "Logged out from all devices",
-        });
-
-        // Immediately clear auth via store logout (bypass confirmation)
-        confirmLogout();
-
-        // No full page reload needed – UI will update via store reset
-      } else {
-        toast.error("Logout Failed", {
-          description: data.error || "Failed to logout from all devices",
-        });
-      }
-    } catch (error) {
-      console.error("Error logging out all devices:", error);
-      toast.error("Network Error", {
-        description: "Failed to connect to server",
-      });
-    } finally {
-      setIsLoggingOutAllDevices(false);
-    }
-  };
 
   // States for previous volume levels for mute/unmute functionality
   const [prevMasterVolume, setPrevMasterVolume] = useState(
@@ -536,7 +383,7 @@ export function ControlPanelsAppComponent({
 
   const performReset = () => {
     // Preserve critical recovery keys while clearing everything else
-    const fileMetadataStore = localStorage.getItem("ryos:files");
+    const fileMetadataStore = localStorage.getItem("desktop:files");
     const usernameRecovery = localStorage.getItem("_usr_recovery_key_");
     const authTokenRecovery = localStorage.getItem("_auth_recovery_key_");
 
@@ -544,7 +391,7 @@ export function ControlPanelsAppComponent({
     clearPrefetchFlag(); // Force re-prefetch on next boot
 
     if (fileMetadataStore) {
-      localStorage.setItem("ryos:files", fileMetadataStore);
+      localStorage.setItem("desktop:files", fileMetadataStore);
     }
     if (usernameRecovery) {
       localStorage.setItem("_usr_recovery_key_", usernameRecovery);
@@ -717,7 +564,7 @@ export function ControlPanelsAppComponent({
         .split("T")
         .join("-")
         .slice(0, -5);
-      a.download = `ryOS-backup-${timestamp}.gz`;
+      a.download = `desktop-backup-${timestamp}.gz`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -816,10 +663,10 @@ export function ControlPanelsAppComponent({
           console.log(
             "[Restore] Detected old backup format (no version or version < 2)"
           );
-        } else if (backup.localStorage && backup.localStorage["ryos:files"]) {
+        } else if (backup.localStorage && backup.localStorage["desktop:files"]) {
           // For newer backups, also check if files lack UUIDs
           try {
-            const filesDataStr = backup.localStorage["ryos:files"];
+            const filesDataStr = backup.localStorage["desktop:files"];
             const filesData = filesDataStr ? JSON.parse(filesDataStr) : {};
             if (filesData.state && filesData.state.items) {
               // Check if any files lack UUIDs
@@ -980,7 +827,7 @@ export function ControlPanelsAppComponent({
           /* Synchronize files store metadata with IndexedDB content after restore */
           try {
             const db = await ensureIndexedDBInitialized();
-            const persistedKey = "ryos:files";
+            const persistedKey = "desktop:files";
             let raw = localStorage.getItem(persistedKey);
 
             // Handle case where files store doesn't exist yet (very old backups)
@@ -1410,7 +1257,7 @@ export function ControlPanelsAppComponent({
 
               // Clear any migration flag to ensure migration doesn't run again
               localStorage.setItem(
-                "ryos:indexeddb-uuid-migration-v1",
+                "desktop:indexeddb-uuid-migration-v1",
                 "completed"
               );
               console.log("[Restore] UUID migration completed during restore");
@@ -1425,7 +1272,7 @@ export function ControlPanelsAppComponent({
 
             // Emergency fallback: ensure library state is set to prevent auto-init even on error
             try {
-              const persistedKey = "ryos:files";
+              const persistedKey = "desktop:files";
               const raw = localStorage.getItem(persistedKey);
               if (raw) {
                 const parsed = JSON.parse(raw);
@@ -1768,94 +1615,6 @@ export function ControlPanelsAppComponent({
 
             <TabsContent value="system" className={tabStyles.tabContentClasses}>
               <div className="space-y-4 h-full overflow-y-auto p-4">
-                {/* User Account Section */}
-                <div className="space-y-2">
-                  {username ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[13px] font-geneva-12 font-medium">
-                            @{username}
-                          </span>
-                          <span className="text-[11px] text-gray-600 font-geneva-12">
-                            {t("apps.control-panels.loggedInToRyOS")}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          {debugMode && (
-                            <Button
-                              variant="retro"
-                              onClick={promptVerifyToken}
-                              className="h-7"
-                            >
-                              {t("apps.control-panels.logIn")}
-                            </Button>
-                          )}
-                          {hasPassword === false ? (
-                            <Button
-                              variant="retro"
-                              onClick={() => {
-                                setPasswordInput("");
-                                setPasswordError(null);
-                                setIsPasswordDialogOpen(true);
-                              }}
-                              className="h-7"
-                            >
-                              {t("apps.control-panels.setPassword")}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="retro"
-                              onClick={logout}
-                              className="h-7"
-                            >
-                              {t("apps.control-panels.logOut")}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {debugMode && (
-                        <div className="flex">
-                          <Button
-                            variant="retro"
-                            onClick={handleLogoutAllDevices}
-                            disabled={isLoggingOutAllDevices}
-                            className="w-full"
-                          >
-                            {isLoggingOutAllDevices
-                              ? t("apps.control-panels.loggingOut")
-                              : t("apps.control-panels.logOutOfAllDevices")}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[13px] font-geneva-12 font-medium">
-                            {t("apps.control-panels.ryOSAccount")}
-                          </span>
-                          <span className="text-[11px] text-gray-600 font-geneva-12">
-                            {t("apps.control-panels.loginToSendMessages")}
-                          </span>
-                        </div>
-                        <Button
-                          variant="retro"
-                          onClick={promptSetUsername}
-                          className="h-7"
-                        >
-                          {t("apps.control-panels.login")}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <hr
-                  className="my-4 border-t"
-                  style={tabStyles.separatorStyle}
-                />
 
                 <div className="space-y-2">
                   <Button
@@ -2047,24 +1806,24 @@ export function ControlPanelsAppComponent({
                         <SelectTrigger className="w-[120px]">
                           <SelectValue placeholder={t("apps.control-panels.select")}>
                             {ttsVoice === "YC3iw27qriLq7UUaqAyi"
-                              ? "Ryo v3"
+                              ? "Voice 3"
                               : ttsVoice === "kAyjEabBEu68HYYYRAHR"
-                              ? "Ryo v2"
+                              ? "Voice 2"
                               : ttsVoice === "G0mlS0y8ByHjGAOxBgvV"
-                              ? "Ryo"
+                              ? "Voice 1"
                               : t("apps.control-panels.select")}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__null__">{t("apps.control-panels.select")}</SelectItem>
                           <SelectItem value="YC3iw27qriLq7UUaqAyi">
-                            Ryo v3
+                            Voice 3
                           </SelectItem>
                           <SelectItem value="kAyjEabBEu68HYYYRAHR">
-                            Ryo v2
+                            Voice 2
                           </SelectItem>
                           <SelectItem value="G0mlS0y8ByHjGAOxBgvV">
-                            Ryo
+                            Voice 1
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -2144,83 +1903,6 @@ export function ControlPanelsAppComponent({
           onConfirm={handleConfirmFormat}
           title={t("common.system.formatFileSystem")}
           description={t("common.system.formatFileSystemDesc")}
-        />
-        {/* Sign Up Dialog (was SetUsernameDialog) */}
-        <LoginDialog
-          initialTab="signup"
-          isOpen={isUsernameDialogOpen}
-          onOpenChange={setIsUsernameDialogOpen}
-          /* Login props (inactive) */
-          usernameInput={verifyUsernameInput}
-          onUsernameInputChange={setVerifyUsernameInput}
-          passwordInput={verifyPasswordInput}
-          onPasswordInputChange={setVerifyPasswordInput}
-          onLoginSubmit={async () => {
-            await handleVerifyTokenSubmit(verifyPasswordInput, true);
-          }}
-          isLoginLoading={isVerifyingToken}
-          loginError={verifyError}
-          /* Sign Up props */
-          newUsername={newUsername}
-          onNewUsernameChange={setNewUsername}
-          newPassword={newPassword}
-          onNewPasswordChange={setNewPassword}
-          onSignUpSubmit={submitUsernameDialog}
-          isSignUpLoading={isSettingUsername}
-          signUpError={usernameError}
-        />
-
-        {/* Log In Dialog */}
-        <LoginDialog
-          isOpen={isVerifyDialogOpen}
-          onOpenChange={setVerifyDialogOpen}
-          /* Login props */
-          usernameInput={verifyUsernameInput}
-          onUsernameInputChange={setVerifyUsernameInput}
-          passwordInput={verifyPasswordInput}
-          onPasswordInputChange={setVerifyPasswordInput}
-          onLoginSubmit={async () => {
-            await handleVerifyTokenSubmit(verifyPasswordInput, true);
-          }}
-          isLoginLoading={isVerifyingToken}
-          loginError={verifyError}
-          /* Sign Up props (inactive) */
-          newUsername={verifyUsernameInput}
-          onNewUsernameChange={setVerifyUsernameInput}
-          newPassword={verifyPasswordInput}
-          onNewPasswordChange={setVerifyPasswordInput}
-          onSignUpSubmit={async () => {
-            setVerifyDialogOpen(false);
-            promptSetUsername();
-          }}
-          isSignUpLoading={false}
-          signUpError={null}
-        />
-        <InputDialog
-          isOpen={isPasswordDialogOpen}
-          onOpenChange={setIsPasswordDialogOpen}
-          onSubmit={handleSetPassword}
-          title="Set Password"
-          description="Set a password to enable account recovery. You can use this password to get a new token if you lose access."
-          value={passwordInput}
-          onChange={(value) => {
-            setPasswordInput(value);
-            setPasswordError(null);
-          }}
-          isLoading={isSettingPassword}
-          errorMessage={passwordError}
-          submitLabel="Set Password"
-        />
-        <LogoutDialog
-          isOpen={isLogoutConfirmDialogOpen}
-          onOpenChange={setIsLogoutConfirmDialogOpen}
-          onConfirm={confirmLogout}
-          hasPassword={hasPassword}
-          onSetPassword={() => {
-            setPasswordInput("");
-            setPasswordError(null);
-            setIsPasswordDialogOpen(true);
-          }}
         />
       </WindowFrame>
     </>

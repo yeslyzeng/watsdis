@@ -155,9 +155,9 @@ export function StartMenu({ apps }: StartMenuProps) {
                     textAlign: "left",
                   }}
                 >
-                  ryOS{" "}
+                  Desktop{" "}
                   <span style={{ fontWeight: "100" }}>
-                    {currentTheme === "xp" ? t("common.startMenu.ryosProfessional") : t("common.startMenu.ryos98")}
+                    {currentTheme === "xp" ? t("common.startMenu.professional") : t("common.startMenu.edition98")}
                   </span>
                 </div>
               </div>

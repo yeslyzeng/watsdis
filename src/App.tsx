@@ -3,7 +3,6 @@ import { appRegistry } from "./config/appRegistry";
 import { useEffect, useState, useMemo } from "react";
 import { applyDisplayMode } from "./utils/displayMode";
 import { Toaster } from "./components/ui/sonner";
-import { toast } from "sonner";
 import { useAppStoreShallow } from "@/stores/helpers";
 import { BootScreen } from "./components/dialogs/BootScreen";
 import { getNextBootMessage, clearNextBootMessage } from "./utils/bootMessage";
@@ -12,9 +11,6 @@ import { useThemeStore } from "./stores/useThemeStore";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useOffline } from "./hooks/useOffline";
 import { useTranslation } from "react-i18next";
-import { isTauri } from "./utils/platform";
-import { checkDesktopUpdate, onDesktopUpdate, DesktopUpdateResult } from "./utils/prefetch";
-import { Download } from "lucide-react";
 import { ScreenSaverOverlay } from "./components/screensavers/ScreenSaverOverlay";
 
 // Convert registry to array
@@ -22,12 +18,11 @@ const apps: AnyApp[] = Object.values(appRegistry);
 
 export function App() {
   const { t } = useTranslation();
-  const { displayMode, isFirstBoot, setHasBooted, setLastSeenDesktopVersion } = useAppStoreShallow(
+  const { displayMode, isFirstBoot, setHasBooted } = useAppStoreShallow(
     (state) => ({
       displayMode: state.displayMode,
       isFirstBoot: state.isFirstBoot,
       setHasBooted: state.setHasBooted,
-      setLastSeenDesktopVersion: state.setLastSeenDesktopVersion,
     })
   );
   const currentTheme = useThemeStore((state) => state.current);
@@ -88,73 +83,6 @@ export function App() {
       setHasBooted();
     }
   }, [isFirstBoot, setHasBooted]);
-
-  // Show download toast for macOS users when new desktop version is available
-  // For web: show on first visit and updates
-  // For Tauri: only show on updates (not first time)
-  useEffect(() => {
-    const isMacOS = navigator.platform.toLowerCase().includes("mac");
-    const isInTauri = isTauri();
-
-    if (!isMacOS) {
-      return;
-    }
-
-    // Handler for showing the desktop update toast
-    const showDesktopUpdateToast = (result: DesktopUpdateResult) => {
-      if (result.type === 'update' && result.version) {
-        // Mark as seen immediately so dismissing the toast won't show it again
-        setLastSeenDesktopVersion(result.version);
-        // New version available - show update toast (both web and Tauri)
-        toast(`ryOS ${result.version} for Mac is available`, {
-          id: 'desktop-update',
-          icon: <Download className="h-4 w-4" />,
-          duration: Infinity,
-          action: {
-            label: "Download",
-            onClick: () => {
-              window.open(
-                `https://github.com/ryokun6/ryos/releases/download/v${result.version}/ryOS_${result.version}_aarch64.dmg`,
-                "_blank"
-              );
-            },
-          },
-        });
-      } else if (result.type === 'first-time' && result.version && !isInTauri) {
-        // Mark as seen immediately so dismissing the toast won't show it again
-        setLastSeenDesktopVersion(result.version);
-        // First time user on web - show initial download toast (not in Tauri)
-        toast("ryOS is available as a Mac app", {
-          id: 'desktop-update',
-          icon: <Download className="h-4 w-4" />,
-          duration: Infinity,
-          action: {
-            label: "Download",
-            onClick: () => {
-              window.open(
-                `https://github.com/ryokun6/ryos/releases/download/v${result.version}/ryOS_${result.version}_aarch64.dmg`,
-                "_blank"
-              );
-            },
-          },
-        });
-      } else if (result.type === 'first-time' && result.version && isInTauri) {
-        // First time in Tauri - just store the version without showing toast
-        setLastSeenDesktopVersion(result.version);
-      }
-    };
-
-    // Register callback for periodic/manual update checks
-    onDesktopUpdate(showDesktopUpdateToast);
-
-    // Initial check on load (delayed to let app render first)
-    const timer = setTimeout(async () => {
-      const result = await checkDesktopUpdate();
-      showDesktopUpdateToast(result);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [setLastSeenDesktopVersion]);
 
   if (showBootScreen) {
     return (

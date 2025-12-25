@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AudioInputButton } from "@/components/ui/audio-input-button";
+
 import { PlaybackBars } from "@/components/ui/playback-bars";
 import {
   ChevronDown,
@@ -35,11 +35,8 @@ interface EditorToolbarProps {
   editor: Editor | null;
   currentTheme: string;
   speechEnabled: boolean;
-  isTranscribing: boolean;
   isTtsLoading: boolean;
   isSpeaking: boolean;
-  onTranscriptionComplete: (text: string) => void;
-  onTranscriptionStart: () => void;
   onSpeak: () => void;
 }
 
@@ -47,11 +44,8 @@ export function EditorToolbar({
   editor,
   currentTheme,
   speechEnabled,
-  isTranscribing,
   isTtsLoading,
   isSpeaking,
-  onTranscriptionComplete,
-  onTranscriptionStart,
   onSpeak,
 }: EditorToolbarProps) {
   const { t } = useTranslation();
@@ -278,15 +272,8 @@ export function EditorToolbar({
           {/* Divider */}
           <div className="w-[1px] h-[22px] bg-[#808080] shadow-[1px_0_0_#ffffff]" />
 
-          {/* Voice transcription & speech */}
+          {/* Speech */}
           <div className="flex">
-            <AudioInputButton
-              onTranscriptionComplete={onTranscriptionComplete}
-              onTranscriptionStart={onTranscriptionStart}
-              isLoading={isTranscribing}
-              className="w-[26px] h-[22px] flex items-center justify-center"
-              silenceThreshold={10000}
-            />
             {speechEnabled && (
               <button
                 onClick={() => {
@@ -525,15 +512,8 @@ export function EditorToolbar({
         </Button>
       </div>
 
-      {/* Voice transcription & speech */}
+      {/* Speech */}
       <div className="flex items-center gap-1">
-        <AudioInputButton
-          onTranscriptionComplete={onTranscriptionComplete}
-          onTranscriptionStart={onTranscriptionStart}
-          isLoading={isTranscribing}
-          className="h-7 w-7 inline-flex items-center justify-center text-neutral-500 hover:text-black"
-          silenceThreshold={10000}
-        />
         {speechEnabled && (
           <Button
             variant="ghost"

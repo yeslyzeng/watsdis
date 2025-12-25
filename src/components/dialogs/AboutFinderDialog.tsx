@@ -10,9 +10,8 @@ import { getNonFinderApps } from "@/config/appRegistry";
 import { useAppContext } from "@/contexts/AppContext";
 import { useThemeStore } from "@/stores/useThemeStore";
 import { useAppStore } from "@/stores/useAppStore";
-import { useChatsStore } from "@/stores/useChatsStore";
 import { cn } from "@/lib/utils";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { ThemedIcon } from "@/components/shared/ThemedIcon";
 import { getTranslatedAppName } from "@/utils/i18n";
 
@@ -34,35 +33,16 @@ export function AboutFinderDialog({
   const { t } = useTranslation();
   const { appStates } = useAppContext();
   const currentTheme = useThemeStore((state) => state.current);
-  const version = useAppStore((state) => state.ryOSVersion);
-  const buildNumber = useAppStore((state) => state.ryOSBuildNumber);
-  const buildTime = useAppStore((state) => state.ryOSBuildTime);
+  const version = useAppStore((state) => state.desktopVersion);
+  const buildNumber = useAppStore((state) => state.desktopBuildNumber);
+  const buildTime = useAppStore((state) => state.desktopBuildTime);
   const isXpTheme = currentTheme === "xp" || currentTheme === "win98";
   const [versionDisplayMode, setVersionDisplayMode] = useState(0); // 0: version, 1: commit, 2: date
-  const [desktopVersion, setDesktopVersion] = useState<string | null>(null);
-  const isMac = useMemo(() => 
-    typeof navigator !== 'undefined' && navigator.platform.toLowerCase().includes('mac'), 
-    []
-  );
-
-  // Fetch desktop version for download link
-  useEffect(() => {
-    if (isMac) {
-      fetch('/version.json', { cache: 'no-store' })
-        .then(res => res.json())
-        .then(data => setDesktopVersion(data.desktopVersion))
-        .catch(() => setDesktopVersion('1.0.1')); // fallback
-    }
-  }, [isMac]);
-
-  // Get current username for admin check
-  const username = useChatsStore((state) => state.username);
-  const isAdmin = username?.toLowerCase() === "ryo";
 
   const memoryUsage = useMemo(() => {
     const totalMemory = 32; // 32MB total memory
     const systemUsage = 8.5; // System takes about 8.5MB
-    const apps = getNonFinderApps(isAdmin);
+    const apps = getNonFinderApps(false);
 
     // Get only open apps
     const openApps = apps.filter((app) => appStates[app.id]?.isOpen);
@@ -85,7 +65,7 @@ export function AboutFinderDialog({
     ];
 
     return appUsages;
-  }, [appStates, isAdmin]);
+  }, [appStates]);
 
   const totalUsedMemory = useMemo(() => {
     return memoryUsage.reduce((acc, app) => acc + app.memoryMB, 0);
@@ -110,7 +90,7 @@ export function AboutFinderDialog({
                     : "font-apple-garamond text-2xl "
                 )}
               >
-                ryOS
+                Desktop
                 {currentTheme === "system7"
                   ? " 7"
                   : currentTheme === "macosx"
@@ -173,19 +153,7 @@ export function AboutFinderDialog({
                       : undefined,
                   }}
                 >
-                  <p>© Ryo Lu. 1992-{new Date().getFullYear()}</p>
-                  {isMac && desktopVersion && (
-                    <p>
-                      <a 
-                        href={`https://github.com/ryokun6/ryos/releases/download/v${desktopVersion}/ryOS_${desktopVersion}_aarch64.dmg`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {t("apps.control-panels.downloadMacApp")}
-                      </a>
-                    </p>
-                  )}
+                  <p>© {new Date().getFullYear()}</p>
                 </div>
               </div>
             </div>

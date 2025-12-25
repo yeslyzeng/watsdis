@@ -6,7 +6,7 @@ import "./index.css";
 import { useThemeStore } from "./stores/useThemeStore";
 import { useLanguageStore } from "./stores/useLanguageStore";
 import { preloadFileSystemData } from "./stores/useFilesStore";
-import { preloadIpodData } from "./stores/useIpodStore";
+
 import { initPrefetch } from "./utils/prefetch";
 import "./lib/i18n";
 import { primeReactResources } from "./lib/reactResources";
@@ -18,7 +18,7 @@ primeReactResources();
 // CHUNK LOAD ERROR HANDLING - Reload when old assets 404 after deployment
 // ============================================================================
 window.addEventListener("vite:preloadError", (event) => {
-  console.warn("[ryOS] Chunk load failed, reloading for fresh assets...", event);
+  console.warn("[Desktop] Chunk load failed, reloading for fresh assets...", event);
   window.location.reload();
 });
 
@@ -27,7 +27,7 @@ window.addEventListener("vite:preloadError", (event) => {
 // These run in parallel before React even mounts
 // ============================================================================
 preloadFileSystemData();
-preloadIpodData();
+
 
 // ============================================================================
 // PREFETCHING - Cache icons, sounds, and app components after boot

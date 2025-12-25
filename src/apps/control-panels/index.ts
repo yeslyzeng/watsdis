@@ -8,12 +8,7 @@ export const helpItems = [
   {
     icon: "🔊",
     title: "Sounds",
-    description: "Toggle UI sounds, typing synth, and Terminal / IE effects",
-  },
-  {
-    icon: "🤖",
-    title: "AI Model",
-    description: "Select the AI model used by Chats and Terminal assistant",
+    description: "Toggle UI sounds and typing synth effects",
   },
   {
     icon: "🌌",
@@ -28,7 +23,7 @@ export const helpItems = [
   {
     icon: "🌐",
     title: "Language",
-    description: "Select your preferred language for ryOS interface",
+    description: "Select your preferred language for the interface",
   },
   {
     icon: "⚙️",
@@ -41,9 +36,9 @@ export const appMetadata = {
   name: "Control Panels",
   version: "1.0.0",
   creator: {
-    name: "Ryo Lu",
-    url: "https://ryo.lu",
+    name: "",
+    url: "",
   },
-  github: "https://github.com/ryokun6/ryos",
+  github: "",
   icon: "/icons/control-panels/appearance-manager/app.png",
 };

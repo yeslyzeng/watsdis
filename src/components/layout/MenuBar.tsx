@@ -29,9 +29,9 @@ import { useThemeStore } from "@/stores/useThemeStore";
 import { getAppIconPath } from "@/config/appRegistry";
 import type { AppId } from "@/config/appRegistry";
 import { ThemedIcon } from "@/components/shared/ThemedIcon";
-import { useFilesStore } from "@/stores/useFilesStore";
-import type { AppInstance } from "@/stores/useAppStore";
-import type { AppletViewerInitialData } from "@/apps/applet-viewer";
+
+
+
 import { useOffline } from "@/hooks/useOffline";
 import { WifiOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,10 +67,10 @@ const finderMetadata = {
   name: "Finder",
   version: "1.0.0",
   creator: {
-    name: "Ryo Lu",
-    url: "https://ryo.lu",
+    name: "",
+    url: "",
   },
-  github: "https://github.com/ryokun6/ryos",
+  github: "",
   icon: "/icons/mac.png",
 };
 
@@ -823,50 +823,6 @@ export function MenuBar({ children, inWindowFrame = false }: MenuBarProps) {
   // Check if on phone (must be called before any early returns)
   const isPhone = useIsPhone();
 
-  // Get file system items for applet icons
-  const files = useFilesStore((s) => s.items);
-
-  // Helper to get applet info (icon and name) from instance
-  const getAppletInfo = (instance: AppInstance) => {
-    const initialData = instance.initialData as
-      | AppletViewerInitialData
-      | undefined;
-    const path = initialData?.path || "";
-    const file = files[path];
-
-    // Get filename from path for label
-    const getFileName = (path: string): string => {
-      const parts = path.split("/");
-      const fileName = parts[parts.length - 1];
-      return fileName.replace(/\.(html|app)$/i, "");
-    };
-
-    const label = path ? getFileName(path) : "Applet Store";
-
-    // Check if the file icon is an emoji (not a file path)
-    const fileIcon = file?.icon;
-    const isEmojiIcon =
-      fileIcon &&
-      !fileIcon.startsWith("/") &&
-      !fileIcon.startsWith("http") &&
-      fileIcon.length <= 10;
-
-    // If no path (applet store), use the applet viewer icon
-    // Otherwise, use file icon if emoji, or fallback to package emoji
-    let icon: string;
-    let isEmoji: boolean;
-    if (!path) {
-      // Applet store - use app icon
-      icon = getAppIconPath("applet-viewer");
-      isEmoji = false;
-    } else {
-      icon = isEmojiIcon ? fileIcon : "📦";
-      isEmoji = true;
-    }
-
-    return { icon, label, isEmoji };
-  };
-
   // Tauri fullscreen detection (must be declared before any early returns)
   const isTauriApp = isTauri();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -1029,13 +985,10 @@ export function MenuBar({ children, inWindowFrame = false }: MenuBarProps) {
 
                 const isForeground = instanceId === foregroundInstanceId;
                 const isMinimized = instance.isMinimized ?? false;
-                const isApplet = instance.appId === "applet-viewer";
-                
                 // Get icon and label based on app type
-                const appletInfo = isApplet ? getAppletInfo(instance) : null;
-                const displayIcon = appletInfo?.icon || getAppIconPath(instance.appId);
-                const displayLabel = appletInfo?.label || instance.title || getAppName(instance.appId);
-                const isEmoji = appletInfo?.isEmoji || false;
+                const displayIcon = getAppIconPath(instance.appId);
+                const displayLabel = instance.title || getAppName(instance.appId);
+                const isEmoji = false;
 
                 return (
                   <motion.button
@@ -1221,11 +1174,9 @@ export function MenuBar({ children, inWindowFrame = false }: MenuBarProps) {
                     if (!instance || !instance.isOpen) return null;
                     
                     const isMinimized = instance.isMinimized ?? false;
-                    const isApplet = instance.appId === "applet-viewer";
-                    const appletInfo = isApplet ? getAppletInfo(instance) : null;
-                    const displayIcon = appletInfo?.icon || getAppIconPath(instance.appId);
-                    const displayLabel = appletInfo?.label || instance.title || getAppName(instance.appId);
-                    const isEmoji = appletInfo?.isEmoji || false;
+                    const displayIcon = getAppIconPath(instance.appId);
+                    const displayLabel = instance.title || getAppName(instance.appId);
+                    const isEmoji = false;
                     
                     return (
                       <DropdownMenuItem
